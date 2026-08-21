@@ -1,0 +1,207 @@
+:root {
+  --ink: #0b0e14;
+  --panel: rgba(17, 21, 28, 0.88);
+  --panel-border: rgba(138, 147, 166, 0.18);
+  --text: #e8eaf0;
+  --muted: #8a93a6;
+  --accent: #ff2e6c;
+  --font-ui: 'IBM Plex Sans KR', system-ui, sans-serif;
+  --font-display: 'Instrument Serif', 'IBM Plex Sans KR', serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+}
+
+* { box-sizing: border-box; }
+
+html, body, #root {
+  margin: 0;
+  height: 100%;
+  background: var(--ink);
+  color: var(--text);
+  font-family: var(--font-ui);
+  font-size: 14px;
+}
+
+.app { position: relative; height: 100%; overflow: hidden; }
+
+.map-layer { position: absolute; inset: 0; }
+.map-layer .gmap, .map-layer canvas.preview { width: 100%; height: 100%; display: block; }
+
+/* ---------- top bar ---------- */
+.topbar {
+  position: absolute; top: 0; left: 0; right: 0;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 18px;
+  pointer-events: none;
+  z-index: 20;
+}
+.topbar > * { pointer-events: auto; }
+.wordmark {
+  font-family: var(--font-display);
+  font-size: 26px;
+  letter-spacing: 0.01em;
+  text-shadow: 0 1px 12px rgba(0, 0, 0, 0.7);
+  user-select: none;
+}
+.wordmark em { color: var(--accent); font-style: italic; }
+.topbar-right { display: flex; align-items: center; gap: 10px; }
+
+/* ---------- glass panel base ---------- */
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: 14px;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.45);
+}
+
+/* ---------- left rail ---------- */
+.rail {
+  position: absolute; top: 64px; left: 18px; bottom: 18px;
+  width: 296px;
+  display: flex; flex-direction: column; gap: 12px;
+  z-index: 10;
+  overflow-y: auto;
+  padding-right: 2px;
+  scrollbar-width: thin;
+}
+.rail section { padding: 14px 16px; }
+.rail h2 {
+  margin: 0 0 10px;
+  font-size: 11px; font-weight: 600;
+  letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--muted);
+}
+
+.privacy { font-size: 12px; color: var(--muted); line-height: 1.55; margin: 8px 0 0; }
+
+/* ---------- buttons & inputs ---------- */
+button {
+  font-family: var(--font-ui); font-size: 13px; font-weight: 500;
+  color: var(--text);
+  background: rgba(138, 147, 166, 0.14);
+  border: 1px solid var(--panel-border);
+  border-radius: 9px;
+  padding: 8px 12px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+button:hover { background: rgba(138, 147, 166, 0.26); }
+button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+button.primary { background: var(--accent); border-color: transparent; color: #fff; }
+button.primary:hover { background: #ff4f83; }
+button.ghost { background: transparent; border-color: transparent; color: var(--muted); }
+button.ghost:hover { color: var(--text); background: rgba(138, 147, 166, 0.14); }
+
+input[type='datetime-local'], input[type='text'], input[type='password'] {
+  width: 100%;
+  font-family: var(--font-mono); font-size: 12px;
+  color: var(--text);
+  background: rgba(11, 14, 20, 0.7);
+  border: 1px solid var(--panel-border);
+  border-radius: 8px;
+  padding: 7px 9px;
+  color-scheme: dark;
+}
+input:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+label.field { display: block; margin-bottom: 10px; font-size: 12px; color: var(--muted); }
+label.field span { display: block; margin-bottom: 4px; }
+
+/* ---------- import ---------- */
+.import-zone {
+  border: 1.5px dashed rgba(138, 147, 166, 0.4);
+  border-radius: 10px;
+  padding: 16px 12px;
+  text-align: center;
+  color: var(--muted);
+  font-size: 12.5px; line-height: 1.6;
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+.import-zone:hover, .import-zone.drag { border-color: var(--accent); color: var(--text); }
+.import-zone strong { color: var(--text); font-weight: 600; }
+.import-actions { display: flex; gap: 8px; margin-top: 10px; }
+.import-actions button { flex: 1; }
+.parse-error { color: #ff7a7a; font-size: 12px; margin-top: 8px; line-height: 1.5; }
+
+/* ---------- device list ---------- */
+.device { display: flex; align-items: center; gap: 10px; padding: 7px 4px; border-radius: 8px; }
+.device:hover { background: rgba(138, 147, 166, 0.1); }
+.device input[type='checkbox'] { accent-color: var(--accent); width: 15px; height: 15px; }
+.device .dot { width: 10px; height: 10px; border-radius: 50%; flex: none; box-shadow: 0 0 8px currentColor; }
+.device .meta { flex: 1; min-width: 0; }
+.device .name { font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.device .sub { font-size: 11px; color: var(--muted); font-family: var(--font-mono); }
+.device .km { font-family: var(--font-mono); font-size: 12px; color: var(--muted); }
+.device.off { opacity: 0.45; }
+
+/* ---------- time range ---------- */
+.presets { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+.presets button { padding: 5px 10px; font-size: 12px; border-radius: 999px; }
+.presets button.on { background: var(--accent); border-color: transparent; color: #fff; }
+
+/* ---------- odometer card (signature) ---------- */
+.odometer {
+  position: absolute; left: 50%; bottom: 26px; transform: translateX(-50%);
+  z-index: 10;
+  padding: 16px 30px 14px;
+  text-align: center;
+  min-width: 300px;
+}
+.odometer .title { font-size: 13px; color: var(--muted); margin-bottom: 2px; }
+.odometer .title b { color: var(--text); font-weight: 600; }
+.odometer .km {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 52px;
+  line-height: 1.05;
+  letter-spacing: 0.01em;
+  font-variant-numeric: tabular-nums;
+}
+.odometer .km small { font-size: 24px; margin-left: 6px; color: var(--muted); font-style: normal; }
+.odometer .sub { font-family: var(--font-mono); font-size: 11px; color: var(--muted); margin-top: 4px; }
+
+/* ---------- auth chip ---------- */
+.auth-chip { display: flex; align-items: center; gap: 8px; padding: 5px 10px 5px 6px; border-radius: 999px; }
+.auth-chip img { width: 24px; height: 24px; border-radius: 50%; }
+.auth-chip .who { font-size: 12px; line-height: 1.25; }
+.auth-chip .who small { color: var(--muted); display: block; font-size: 10.5px; }
+
+/* ---------- modal ---------- */
+.modal-backdrop {
+  position: fixed; inset: 0; z-index: 50;
+  background: rgba(4, 6, 10, 0.6);
+  display: flex; align-items: center; justify-content: center;
+  backdrop-filter: blur(3px);
+}
+.modal { width: min(440px, calc(100vw - 32px)); padding: 20px 22px; }
+.modal h2 { margin: 0 0 6px; font-family: var(--font-display); font-weight: 400; font-size: 22px; }
+.modal p.hint { color: var(--muted); font-size: 12.5px; line-height: 1.6; margin: 0 0 14px; }
+.modal p.hint a { color: var(--accent); }
+.modal .row { display: flex; justify-content: flex-end; gap: 8px; margin-top: 14px; }
+
+/* ---------- empty state ---------- */
+.empty-note {
+  position: absolute; left: 50%; top: 42%; transform: translate(-50%, -50%);
+  z-index: 5; text-align: center; padding: 26px 34px; max-width: 420px;
+}
+.empty-note h1 { font-family: var(--font-display); font-weight: 400; font-size: 30px; margin: 0 0 8px; }
+.empty-note p { color: var(--muted); line-height: 1.65; font-size: 13.5px; margin: 0; }
+
+.attribution {
+  position: absolute; right: 8px; bottom: 6px; z-index: 6;
+  font-size: 10.5px; color: rgba(138, 147, 166, 0.8);
+  font-family: var(--font-mono);
+  background: rgba(11, 14, 20, 0.55); padding: 2px 8px; border-radius: 6px;
+}
+
+@media (max-width: 720px) {
+  .rail { width: auto; right: 18px; top: auto; bottom: 0; max-height: 46vh; border-radius: 14px 14px 0 0; }
+  .odometer { bottom: auto; top: 60px; padding: 10px 18px; min-width: 240px; }
+  .odometer .km { font-size: 36px; }
+  .empty-note { top: 30%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; animation: none !important; }
+}
