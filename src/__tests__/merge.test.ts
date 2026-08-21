@@ -10,11 +10,18 @@ const track = (id: string, label: string, ts: number[], source = 'f.json'): Devi
 })
 
 describe('mergeDevices', () => {
-  it('re-importing the same content is idempotent (dedupe by timestamp)', () => {
+  it('re-importing the same content is idempotent (dedupe by full point tuple)', () => {
     const prev = mergeDevices([], [track('a', '내 기기', [1, 2, 3])])
     const next = mergeDevices(prev, [track('a', '내 기기', [2, 3, 4])])
     expect(next).toHaveLength(1)
     expect(next[0].points.map((p) => p.t)).toEqual([1, 2, 3, 4])
+  })
+
+  it('keeps two distinct fixes that share one timestamp (no coordinate loss)', () => {
+    const a: DeviceTrack = { id: 'a', label: 'x', source: 'f', points: [{ lat: 35.0, lng: 129.0, t: 7 }] }
+    const b: DeviceTrack = { id: 'a', label: 'x', source: 'f', points: [{ lat: 35.001, lng: 129.0, t: 7 }] }
+    const next = mergeDevices(mergeDevices([], [a]), [b])
+    expect(next[0].points).toHaveLength(2)
   })
 
   it('two devices with the same label both survive, disambiguated', () => {

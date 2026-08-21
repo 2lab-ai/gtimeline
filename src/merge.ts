@@ -11,12 +11,15 @@ export function mergeDevices(prev: DeviceTrack[], added: DeviceTrack[]): DeviceT
   for (const d of added) {
     const existing = map.get(d.id)
     if (existing) {
-      const byT = new Map(existing.points.map((p) => [p.t, p]))
-      for (const p of d.points) byT.set(p.t, p)
+      // Dedupe by the full (t, lat, lng) tuple — the same instant can carry
+      // two distinct fixes, and the distance layer treats those as real.
+      const key = (p: { t: number; lat: number; lng: number }) => `${p.t}:${p.lat}:${p.lng}`
+      const byKey = new Map(existing.points.map((p) => [key(p), p]))
+      for (const p of d.points) byKey.set(key(p), p)
       map.set(d.id, {
         ...existing,
         source: existing.source === d.source ? existing.source : `${existing.source}, ${d.source}`,
-        points: [...byT.values()].sort((a, b) => a.t - b.t),
+        points: [...byKey.values()].sort((a, b) => a.t - b.t),
       })
     } else {
       const labels = new Set([...map.values()].map((x) => x.label))

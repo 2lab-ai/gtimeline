@@ -93,6 +93,31 @@ describe('phone export (object form: semanticSegments + rawSignals)', () => {
     expect(a.devices[0].id).not.toBe(b.devices[0].id)
     expect(a.devices[0].id).toBe(aAgain.devices[0].id)
   })
+
+  it('identity diverges on coordinates alone (same point count, same first/last time)', () => {
+    const mk = (mid: string) => parseTimelineJson('Timeline.json', {
+      semanticSegments: [{
+        startTime: '2025-03-01T00:00:00Z',
+        endTime: '2025-03-01T02:00:00Z',
+        timelinePath: [
+          { point: 'geo:35.10,129.00', time: '2025-03-01T00:00:00Z' },
+          { point: mid, time: '2025-03-01T01:00:00Z' },
+          { point: 'geo:35.30,129.20', time: '2025-03-01T02:00:00Z' },
+        ],
+      }],
+    })
+    const deviceA = mk('geo:35.20,129.10')
+    const deviceB = mk('geo:36.90,128.00') // 같은 개수·같은 first/last 시각, 중간 좌표만 다른 기기
+    expect(deviceA.devices[0].id).not.toBe(deviceB.devices[0].id)
+  })
+
+  it('unwraps { signal: { position: … } } raw-signal variant instead of ignoring it', () => {
+    const res = parseTimelineJson('Timeline.json', {
+      rawSignals: [{ signal: { position: { LatLng: '35.2°, 129.1°', timestamp: '2025-01-05T00:00:00Z' } } }],
+    })
+    expect(res.devices[0].points).toHaveLength(1)
+    expect(res.ignored).toBe(0)
+  })
 })
 
 describe('phone export (iOS bare-array form)', () => {

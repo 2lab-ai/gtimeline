@@ -51,6 +51,13 @@ function parseSegment(seg: Record<string, unknown>, out: TrackPoint[], c: Counte
     return
   }
 
+  // Some real exports wrap signals one level deeper: { signal: { position: … } }
+  const inner = seg.signal as Record<string, unknown> | undefined
+  if (inner && typeof inner === 'object') {
+    parseSegment(inner, out, c)
+    return
+  }
+
   // Non-location signal kinds (wifiScan, activityRecord, …) are expected —
   // not data loss.
   c.ignored++
@@ -77,12 +84,20 @@ export function parsePhoneExport(fileName: string, json: unknown, format: Timeli
   points.sort((a, b) => a.t - b.t)
   // Identity from content, not file name: every phone export is called
   // Timeline.json, so two devices' files must not collide, while re-importing
-  // the same file must dedupe to the same track.
-  const first = points[0]?.t ?? 0
-  const last = points[points.length - 1]?.t ?? 0
+  // the same file must dedupe to the same track. The fingerprint covers every
+  // point's time AND coordinates — two devices sharing a time window must
+  // still diverge.
+  let hash = 0x811c9dc5
+  for (const pt of points) {
+    const s = `${pt.t}:${pt.lat.toFixed(6)}:${pt.lng.toFixed(6)}`
+    for (let i = 0; i < s.length; i++) {
+      hash ^= s.charCodeAt(i)
+      hash = Math.imul(hash, 0x01000193)
+    }
+  }
   const label = fileName.replace(/\.json$/i, '')
   const device: DeviceTrack = {
-    id: `phone:${points.length}:${first}:${last}`,
+    id: `phone:${points.length}:${(hash >>> 0).toString(16)}`,
     label: /^timeline$/i.test(label) ? '내 기기' : label,
     source: fileName,
     points,

@@ -207,8 +207,9 @@ export default function App() {
           {parseError && <p className="parse-error">{parseError}</p>}
           {importNote && <p className="import-note">{importNote}</p>}
           <p className="privacy">
-            위치 파일은 이 브라우저 안에서만 파싱된다 — 업로드 0. 단 구글맵 모드에선 타일
-            요청으로 보이는 지도 영역이 Google에 전달된다 (오프라인 미리보기는 외부 요청 없음).
+            위치 파일은 이 브라우저 안에서만 파싱된다 — 업로드 0. 지도: 구글맵 모드는 보이는
+            영역의 타일을 Google에서 받아오고, 오프라인 미리보기는 지도 관련 외부 요청이 없다.
+            Google 로그인을 쓰면 인증 스크립트·프로필 이미지는 Google에서 로드된다.
             {profile ? ` ${profile.email} 세션.` : ''}
           </p>
         </section>
