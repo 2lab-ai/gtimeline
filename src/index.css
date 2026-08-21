@@ -207,3 +207,8 @@ label.field span { display: block; margin-bottom: 4px; }
 }
 
 .import-note { color: var(--muted); font-size: 12px; margin: 8px 0 0; line-height: 1.5; font-family: var(--font-mono); }
+
+.empty-note ol.steps { text-align: left; color: var(--text); font-size: 13px; line-height: 1.7; margin: 12px 0 4px; padding-left: 20px; }
+.empty-note ol.steps li { margin-bottom: 6px; }
+.empty-note .mono { font-family: var(--font-mono); font-size: 12px; background: rgba(138,147,166,.14); padding: 1px 5px; border-radius: 5px; }
+.empty-note .fine { font-size: 11.5px; color: var(--muted); margin-top: 10px; }

@@ -275,9 +275,18 @@ export default function App() {
         <div className="empty-note panel">
           <h1>내 기기들이 그린 지도</h1>
           <p>
-            폰에서 내보낸 구글 타임라인 JSON을 떨어뜨리면, 기기별 이동 경로가 리본으로 그려진다.
-            구글은 타임라인 조회 API를 제공하지 않으므로 (2024년 말 온디바이스 이관)
-            데이터는 내 손의 파일에서 오고, 파일은 브라우저 밖으로 업로드되지 않는다.
+            2024년 말부터 구글 타임라인은 서버가 아니라 <b>각 폰 안</b>에 저장된다 — 로그인해도
+            서버에서 가져올 데이터 자체가 없다. 그래서 딱 한 단계, 폰에서 꺼내오면 된다:
+          </p>
+          <ol className="steps">
+            <li><b>Android</b> 설정 → 위치 → 위치 서비스 → 타임라인 → <b>타임라인 데이터 내보내기</b></li>
+            <li><b>iPhone</b> Google Maps 앱 → 프로필 → 내 타임라인 → ⋯ → 위치 및 개인정보 설정 → <b>타임라인 데이터 내보내기</b></li>
+            <li>나온 <span className="mono">Timeline.json</span>을 여기로 드롭 — 기기 여러 대면 각 폰에서 내보내 함께 드롭 (자동 분리)</li>
+          </ol>
+          <p className="fine">
+            파일은 업로드되지 않고 이 브라우저 안에서만 읽힌다. 구 Takeout 백업(Records.json,
+            2024년 이전)이 있다면 그것도 지원 — 현재 Takeout의 Timeline 항목은 위치가 아닌
+            설정만 담겨 나온다.
           </p>
         </div>
       )}
