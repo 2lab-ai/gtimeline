@@ -11,13 +11,17 @@ export function haversineKm(a: { lat: number; lng: number }, b: { lat: number; l
   return 2 * R * Math.asin(Math.min(1, Math.sqrt(h)))
 }
 
-/** Total path length. Consecutive fixes further apart than `gapKm` are treated
- *  as data gaps (e.g. tracking off), not travel, and are not counted. */
-export function trackDistanceKm(points: TrackPoint[], gapKm = 2000): number {
+/** Total path length. A hop is counted as travel when its implied speed is
+ *  physically plausible (<= maxSpeedKmh, airliner ceiling); an implausible
+ *  jump (e.g. huge distance over near-zero time) is a data artifact, not
+ *  travel. Long-haul flights (real hours elapsed) therefore count. */
+export function trackDistanceKm(points: TrackPoint[], maxSpeedKmh = 1200): number {
   let sum = 0
   for (let i = 1; i < points.length; i++) {
     const d = haversineKm(points[i - 1], points[i])
-    if (d < gapKm) sum += d
+    const dtH = (points[i].t - points[i - 1].t) / 3_600_000
+    const plausible = dtH > 0 ? d / dtH <= maxSpeedKmh : d < 1
+    if (plausible) sum += d
   }
   return sum
 }

@@ -1,10 +1,16 @@
 /** Google Takeout Semantic Location History (monthly YYYY_MONTH.json,
- *  pre-2024 format): timelineObjects of activitySegment / placeVisit. */
+ *  pre-2024 format): timelineObjects of activitySegment / placeVisit.
+ *  This format carries no device identifier, so every monthly file maps to
+ *  ONE shared "device unknown" track (the app merges points by track id) —
+ *  months must never be presented as devices. */
 import type { DeviceTrack, ParseResult, TrackPoint } from '../types'
 import { parseLatLng, parseTime } from './common'
 
+export const SEMANTIC_TRACK_ID = 'semantic:takeout'
+
 export function parseSemantic(fileName: string, json: unknown): ParseResult {
   let skipped = 0
+  let ignored = 0
   const points: TrackPoint[] = []
   const objects = (json as Record<string, unknown>)?.timelineObjects
 
@@ -43,17 +49,17 @@ export function parseSemantic(fileName: string, json: unknown): ParseResult {
         const dur = visit.duration as Record<string, unknown> | undefined
         push(visit.location, parseTime(dur?.startTimestamp ?? dur?.startTimestampMs))
       } else {
-        skipped++
+        ignored++
       }
     }
   }
 
   points.sort((a, b) => a.t - b.t)
   const device: DeviceTrack = {
-    id: `semantic:${fileName}`,
-    label: fileName.replace(/\.json$/i, ''),
+    id: SEMANTIC_TRACK_ID,
+    label: 'Takeout 타임라인 (기기 미상)',
     source: fileName,
     points,
   }
-  return { format: 'semantic', devices: points.length > 0 ? [device] : [], skipped }
+  return { format: 'semantic', devices: points.length > 0 ? [device] : [], skipped, ignored }
 }

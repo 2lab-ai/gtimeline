@@ -27,10 +27,10 @@ function trip(rand: () => number, from: { lat: number; lng: number }, to: { lat:
   for (let i = 0; i <= n; i++) {
     const f = i / n
     // slight arc + jitter so the ribbon reads as a route, not a ruler line
-    const arc = Math.sin(f * Math.PI) * 0.08 * (rand() > 0.5 ? 1 : -1)
+    const arc = Math.sin(f * Math.PI) * 0.04 * (rand() > 0.5 ? 1 : -1)
     points.push({
-      lat: from.lat + (to.lat - from.lat) * f + arc * 0.3 + (rand() - 0.5) * 0.01,
-      lng: from.lng + (to.lng - from.lng) * f + arc + (rand() - 0.5) * 0.01,
+      lat: from.lat + (to.lat - from.lat) * f + arc * 0.3 + (rand() - 0.5) * 0.004,
+      lng: from.lng + (to.lng - from.lng) * f + arc + (rand() - 0.5) * 0.004,
       t: Math.round(startMs + f * hours * 3_600_000),
     })
   }
@@ -42,8 +42,8 @@ function wander(rand: () => number, center: { lat: number; lng: number }, startM
   let { lat, lng } = center
   const n = days * 6
   for (let i = 0; i < n; i++) {
-    lat = center.lat + (lat - center.lat) * 0.7 + (rand() - 0.5) * 0.06
-    lng = center.lng + (lng - center.lng) * 0.7 + (rand() - 0.5) * 0.08
+    lat = center.lat + (lat - center.lat) * 0.7 + (rand() - 0.5) * 0.02
+    lng = center.lng + (lng - center.lng) * 0.7 + (rand() - 0.5) * 0.025
     points.push({ lat, lng, t: Math.round(startMs + (i / 6) * 86_400_000) })
   }
   return points

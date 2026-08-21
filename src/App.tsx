@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { demoDevices } from './demo'
 import { decimate, filterByRange, trackDistanceKm } from './geo'
+import { mergeDevices } from './merge'
 import { parseTimelineJson } from './parsers'
 import type { DeviceTrack } from './types'
 import { GoogleAuth, PROFILE_KEY, type Profile } from './components/GoogleAuth'
@@ -43,29 +44,38 @@ export default function App() {
   const [settings, setSettings] = useState<Settings>(loadSettings)
   const [showSettings, setShowSettings] = useState(false)
   const [parseError, setParseError] = useState<string | null>(null)
+  const [importNote, setImportNote] = useState<string | null>(null)
   const [dragging, setDragging] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
 
   /* ---- import ---- */
   const onFiles = useCallback(async (files: FileList | File[]) => {
     setParseError(null)
+    setImportNote(null)
     const errors: string[] = []
     const added: DeviceTrack[] = []
+    let loaded = 0
+    let skipped = 0
+    let ignored = 0
     for (const file of Array.from(files)) {
       try {
         const text = await file.text()
         const res = parseTimelineJson(file.name, JSON.parse(text))
         if (res.devices.length === 0) errors.push(`${file.name}: 위치 포인트가 없다`)
         added.push(...res.devices)
+        loaded += res.devices.reduce((s, d) => s + d.points.length, 0)
+        skipped += res.skipped
+        ignored += res.ignored
       } catch (e) {
         errors.push(e instanceof Error ? e.message : `${file.name}: 파싱 실패`)
       }
     }
-    if (added.length > 0) {
-      setDevices((prev) => {
-        const ids = new Set(prev.map((d) => d.id))
-        return [...prev, ...added.filter((d) => !ids.has(d.id))]
-      })
+    if (added.length > 0) setDevices((prev) => mergeDevices(prev, added))
+    if (loaded > 0 || skipped > 0) {
+      const parts = [`포인트 ${loaded.toLocaleString()}개 로드`]
+      if (skipped > 0) parts.push(`변환 실패 ${skipped.toLocaleString()}개 — 일부 데이터가 표시되지 않는다`)
+      if (ignored > 0) parts.push(`비위치 항목 ${ignored.toLocaleString()}개 제외`)
+      setImportNote(parts.join(' · '))
     }
     if (errors.length > 0) setParseError(errors.join(' · '))
   }, [])
@@ -192,11 +202,13 @@ export default function App() {
           />
           <div className="import-actions">
             <button onClick={() => setDevices(demoDevices())}>데모 데이터</button>
-            {hasData && <button className="ghost" onClick={() => { setDevices([]); setDisabled(new Set()) }}>비우기</button>}
+            {hasData && <button className="ghost" onClick={() => { setDevices([]); setDisabled(new Set()); setImportNote(null); setParseError(null) }}>비우기</button>}
           </div>
           {parseError && <p className="parse-error">{parseError}</p>}
+          {importNote && <p className="import-note">{importNote}</p>}
           <p className="privacy">
-            모든 파일은 이 브라우저 안에서만 처리된다 — 서버 업로드 0.
+            위치 파일은 이 브라우저 안에서만 파싱된다 — 업로드 0. 단 구글맵 모드에선 타일
+            요청으로 보이는 지도 영역이 Google에 전달된다 (오프라인 미리보기는 외부 요청 없음).
             {profile ? ` ${profile.email} 세션.` : ''}
           </p>
         </section>
@@ -264,7 +276,7 @@ export default function App() {
           <p>
             폰에서 내보낸 구글 타임라인 JSON을 떨어뜨리면, 기기별 이동 경로가 리본으로 그려진다.
             구글은 타임라인 조회 API를 제공하지 않으므로 (2024년 말 온디바이스 이관)
-            데이터는 내 손의 파일에서 온다 — 그리고 이 브라우저를 떠나지 않는다.
+            데이터는 내 손의 파일에서 오고, 파일은 브라우저 밖으로 업로드되지 않는다.
           </p>
         </div>
       )}

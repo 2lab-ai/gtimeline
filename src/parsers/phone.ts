@@ -4,7 +4,7 @@
 import type { DeviceTrack, ParseResult, TimelineFormat, TrackPoint } from '../types'
 import { parseLatLng, parseTime } from './common'
 
-interface Counter { skipped: number }
+interface Counter { skipped: number; ignored: number }
 
 function pushPoint(out: TrackPoint[], c: Counter, loc: unknown, t: number | null): void {
   const ll = parseLatLng(loc)
@@ -50,11 +50,14 @@ function parseSegment(seg: Record<string, unknown>, out: TrackPoint[], c: Counte
     pushPoint(out, c, pos, parseTime(pos.timestamp) ?? segStart)
     return
   }
-  c.skipped++
+
+  // Non-location signal kinds (wifiScan, activityRecord, …) are expected —
+  // not data loss.
+  c.ignored++
 }
 
 export function parsePhoneExport(fileName: string, json: unknown, format: TimelineFormat): ParseResult {
-  const c: Counter = { skipped: 0 }
+  const c: Counter = { skipped: 0, ignored: 0 }
   const points: TrackPoint[] = []
   const segments: unknown[] = []
 
@@ -68,16 +71,21 @@ export function parsePhoneExport(fileName: string, json: unknown, format: Timeli
 
   for (const seg of segments) {
     if (seg && typeof seg === 'object') parseSegment(seg as Record<string, unknown>, points, c)
-    else c.skipped++
+    else c.ignored++
   }
 
   points.sort((a, b) => a.t - b.t)
-  const label = fileName.replace(/\.json$/i, '').replace(/^Timeline[ _-]?/i, '') || fileName
+  // Identity from content, not file name: every phone export is called
+  // Timeline.json, so two devices' files must not collide, while re-importing
+  // the same file must dedupe to the same track.
+  const first = points[0]?.t ?? 0
+  const last = points[points.length - 1]?.t ?? 0
+  const label = fileName.replace(/\.json$/i, '')
   const device: DeviceTrack = {
-    id: `phone:${fileName}`,
-    label: label === fileName.replace(/\.json$/i, '') && /^timeline$/i.test(label) ? '내 기기' : label,
+    id: `phone:${points.length}:${first}:${last}`,
+    label: /^timeline$/i.test(label) ? '내 기기' : label,
     source: fileName,
     points,
   }
-  return { format, devices: points.length > 0 ? [device] : [], skipped: c.skipped }
+  return { format, devices: points.length > 0 ? [device] : [], skipped: c.skipped, ignored: c.ignored }
 }

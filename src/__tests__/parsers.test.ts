@@ -69,13 +69,29 @@ describe('phone export (object form: semanticSegments + rawSignals)', () => {
     expect(pts[1].t).toBe(Date.UTC(2025, 7, 1, 9, 30, 0))
   })
 
-  it('counts unparseable entries as skipped instead of throwing', () => {
+  it('splits real conversion failures (skipped) from non-location signals (ignored)', () => {
     const res = parseTimelineJson('Timeline.json', {
       semanticSegments: [{ startTime: 'bad', timelinePath: [{ point: 'garbage' }] }],
-      rawSignals: [{ position: { LatLng: '35.0°, 129.0°', timestamp: '2025-01-01T00:00:00Z' } }],
+      rawSignals: [
+        { position: { LatLng: '35.0°, 129.0°', timestamp: '2025-01-01T00:00:00Z' } },
+        { wifiScan: { devices: 3 } },
+      ],
     })
     expect(res.devices[0].points).toHaveLength(1)
     expect(res.skipped).toBe(1)
+    expect(res.ignored).toBe(1)
+  })
+
+  it('derives identity from content so same-named exports from two devices never collide', () => {
+    const seg = (iso: string, latLng: string) => ({
+      startTime: iso,
+      visit: { topCandidate: { placeLocation: { latLng } } },
+    })
+    const a = parseTimelineJson('Timeline.json', { semanticSegments: [seg('2025-01-01T00:00:00Z', '35.1°, 129.0°')] })
+    const b = parseTimelineJson('Timeline.json', { semanticSegments: [seg('2025-02-01T00:00:00Z', '37.5°, 127.0°')] })
+    const aAgain = parseTimelineJson('Timeline.json', { semanticSegments: [seg('2025-01-01T00:00:00Z', '35.1°, 129.0°')] })
+    expect(a.devices[0].id).not.toBe(b.devices[0].id)
+    expect(a.devices[0].id).toBe(aAgain.devices[0].id)
   })
 })
 
@@ -138,6 +154,7 @@ describe('Semantic Location History (Takeout monthly)', () => {
     })
     expect(res.format).toBe('semantic')
     expect(res.devices).toHaveLength(1)
+    expect(res.devices[0].id).toBe('semantic:takeout') // months are NOT devices — all merge into one track
     const pts = res.devices[0].points
     expect(pts).toHaveLength(5) // start + raw + waypoint + end + visit
     for (let i = 1; i < pts.length; i++) expect(pts[i].t).toBeGreaterThanOrEqual(pts[i - 1].t)
@@ -162,15 +179,35 @@ describe('geo', () => {
     expect(d).toBeGreaterThan(300)
     expect(d).toBeLessThan(350)
   })
-  it('trackDistanceKm sums consecutive hops and skips giant gaps', () => {
+  it('trackDistanceKm counts physically plausible hops only (speed-based)', () => {
+    const H = 3_600_000
     const pts = [
-      { lat: 35.0, lng: 129.0, t: 1 },
-      { lat: 35.1, lng: 129.0, t: 2 },
-      { lat: -35.0, lng: -50.0, t: 3 }, // continent jump treated as data gap
+      { lat: 35.0, lng: 129.0, t: 0 },
+      { lat: 35.1, lng: 129.0, t: 1 * H }, // ~11 km in 1h — walk/drive, counted
+      { lat: -35.0, lng: -50.0, t: 1 * H + 60_000 }, // ~18,000 km in 1min — artifact, dropped
     ]
     const d = trackDistanceKm(pts)
     expect(d).toBeGreaterThan(10)
     expect(d).toBeLessThan(13)
+  })
+  it('trackDistanceKm keeps long-haul flights (real hours elapsed)', () => {
+    const H = 3_600_000
+    const flight = [
+      { lat: 37.46, lng: 126.44, t: 0 }, // ICN
+      { lat: 49.0, lng: 2.55, t: 12 * H }, // CDG, ~8,900 km / 12h ≈ 742 km/h
+    ]
+    const d = trackDistanceKm(flight)
+    expect(d).toBeGreaterThan(8000)
+  })
+  it('trackDistanceKm tolerates duplicate timestamps for tiny hops only', () => {
+    const pts = [
+      { lat: 35.0, lng: 129.0, t: 5 },
+      { lat: 35.001, lng: 129.0, t: 5 }, // dup ts, ~0.1 km — counted
+      { lat: 36.0, lng: 129.0, t: 5 }, // dup ts, ~111 km — artifact, dropped
+    ]
+    const d = trackDistanceKm(pts)
+    expect(d).toBeGreaterThan(0.05)
+    expect(d).toBeLessThan(1)
   })
   it('filterByRange is inclusive and null-open', () => {
     const pts = [1, 2, 3, 4].map((t) => ({ lat: 35, lng: 129, t }))

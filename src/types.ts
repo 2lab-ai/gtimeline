@@ -18,6 +18,8 @@ export type TimelineFormat = 'phone-object' | 'phone-array' | 'records' | 'seman
 export interface ParseResult {
   format: TimelineFormat
   devices: DeviceTrack[]
-  /** entries that could not be converted into a point */
+  /** entries that carried a position but failed to convert — real data loss */
   skipped: number
+  /** entries that are not location-bearing by design (wifi scans, unknown kinds) */
+  ignored: number
 }

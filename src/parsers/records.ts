@@ -29,5 +29,5 @@ export function parseRecords(fileName: string, json: unknown): ParseResult {
     }
   })
   devices.sort((a, b) => b.points.length - a.points.length)
-  return { format: 'records', devices, skipped }
+  return { format: 'records', devices, skipped, ignored: 0 }
 }
