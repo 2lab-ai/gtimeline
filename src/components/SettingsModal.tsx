@@ -3,16 +3,24 @@ export interface Settings {
   mapsKey: string
 }
 
+import { DEFAULT_CLIENT_ID, DEFAULT_MAPS_KEY } from '../config'
+
 export const SETTINGS_KEY = 'gtimeline.settings'
 
 export function loadSettings(): Settings {
   try {
     const raw = localStorage.getItem(SETTINGS_KEY)
-    if (raw) return { clientId: '', mapsKey: '', ...JSON.parse(raw) }
+    if (raw) {
+      const saved = JSON.parse(raw) as Partial<Settings>
+      return {
+        clientId: saved.clientId || DEFAULT_CLIENT_ID,
+        mapsKey: saved.mapsKey || DEFAULT_MAPS_KEY,
+      }
+    }
   } catch { /* corrupted settings fall back to env defaults */ }
   return {
-    clientId: import.meta.env.VITE_GOOGLE_CLIENT_ID ?? '',
-    mapsKey: import.meta.env.VITE_MAPS_API_KEY ?? '',
+    clientId: import.meta.env.VITE_GOOGLE_CLIENT_ID || DEFAULT_CLIENT_ID,
+    mapsKey: import.meta.env.VITE_MAPS_API_KEY || DEFAULT_MAPS_KEY,
   }
 }
 
@@ -39,7 +47,8 @@ export function SettingsModal({ value, onSave, onClose }: {
       >
         <h2>연결 설정</h2>
         <p className="hint">
-          키는 이 브라우저의 localStorage에만 저장된다. 발급 방법은{' '}
+          기본 키가 앱에 내장돼 있어 보통 아무것도 입력할 필요 없다. 자기 키로 바꿀 때만 사용 —
+          입력값은 이 브라우저의 localStorage에만 저장된다. 발급 방법은{' '}
           <a href="https://github.com/2lab-ai/gtimeline#설정" target="_blank" rel="noreferrer">README#설정</a> 참고.
         </p>
         <label className="field">

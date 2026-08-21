@@ -1,0 +1,6 @@
+#!/bin/bash
+# gtimeline GCP 프로비저닝 — aside 에이전트가 로그인된 개인 구글 계정으로
+# Maps API 키 + OAuth 클라이언트를 만든다. 결과는 아래 OUT 파일에 저장.
+OUT=/Users/zhugehyuk/2lab.ai/gtimeline/scripts/provision-result.txt
+aside exec --effort high "Google Cloud 콘솔(https://console.cloud.google.com)에서 개인 웹앱 'gtimeline'(https://2lab-ai.github.io/gtimeline/)용 공개 크리덴셜 2개를 프로비저닝하라. 브라우저에 로그인된 개인 Google 계정 사용 — 계정 선택 시 icedac@gmail.com 우선. 절대 금지: 카드/은행/결제수단 입력, 새 계정 생성, 비밀번호 입력(결제수단 요구 화면을 만나면 그 하위작업만 중단하고 사유 보고). 단계: (1) 새 프로젝트 'gtimeline' 생성(이미 있으면 재사용). (2) APIs & Services → Library에서 'Maps JavaScript API' 활성화 — 빌링 연결 요구 시 기존 billing account 있으면 연결, 없으면 건너뛰고 BILLING=none 보고. (3) Credentials → Create credentials → API key 생성 후 편집: Application restrictions=Websites에 referrer 'https://2lab-ai.github.io/*' 와 'http://localhost:*' 추가, API restrictions=Maps JavaScript API만, 저장. (4) Google Auth Platform(OAuth consent): App name 'gtimeline', support email=이 계정, External, Testing이면 이 계정을 Test user로 추가. Clients → Create client: Web application, 이름 gtimeline-web, Authorized JavaScript origins = 'https://2lab-ai.github.io' 와 'http://localhost:5173' (redirect URI 없음). (5) 마지막 출력은 정확히 이 형식: ACCOUNT=… / PROJECT_ID=… / MAPS_KEY=… / CLIENT_ID=… / BILLING=linked|already|none / NOTES=…" 2>&1 | tee "$OUT"
+echo "== saved to $OUT =="
